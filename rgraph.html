@@ -111,13 +111,24 @@
 <script type="text/javascript">
 
 //tasknode Raphael plugin
-Raphael.fn.tasknode = function(){
-	
+Raphael.fn.tasknode = function(node){
+	var c=node._c,paper= this;
+	(!c.r) && (c.r=(node.type=="time"?paper.ellipse(c.x,c.y-15,80,30):paper.rect(c.x-70,c.y-40,140,50,3)).attr({fill:(node.color||"#f8f8f8"),stroke:(node.color||"#000"),"cursor":"pointer"}),ellipsedName= node.name.length>8?(node.name.substr(0,7)+".."):node.name);
+	(!c.t) && (c.t=paper.text(c.x,c.y-15,node.taskid+"("+ellipsedName+")\n "+node.runCondition+" \n "+node.lastRun).attr({color:"#f5f5f5","font-size":12,"cursor":"pointer"}));
+	c.r.data("taskid",node.taskid);//将taskid存到rect中
+	c.t.data("taskid",node.taskid);//将taskid存到text中
+	(node.type=="time")?(c.r.attr({x:c.x,y:c.y-15})):(c.r.attr({x:c.x-70,y:c.y-40}));
+	c.t.attr({x:c.x,y:c.y-15});
+    //me.pos[p.x+"|"+p.y]=node.taskid;
+	if(node.highlight) {
+		c.r.attr({"stroke":"#ff9900","stroke-width":3});
+	}
+	return node;
 }
 
 baidu.dom.ready(function(){
     
-	graph = new RGraph("canvas");
+	graph = new RGraph("canvas",{node:"tasknode"});
 	
 	graph.onnodeclick = function(node){//节点点击打开新页签
         var id=node.taskid,name = node.name,tab="";

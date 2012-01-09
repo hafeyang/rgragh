@@ -51,10 +51,12 @@
 			return evt;
 		};
 	
-	RGraph=function (element){
+	RGraph=function (element,opt){
 		this.c=element.nodeType?element:document.getElementById(element);
 		this.paper= Raphael(this.c,this.width,this.height);
 		this.gridsize={w:180,h:100};//每个节点的宽高
+		this.opt= opt||{};
+		this.opt.node=this.opt.node||"";
 		this.reset();
 		this._bindCanvas();
 
@@ -64,6 +66,9 @@
 			e3=this.paper.ellipse(800,630,80,30);
 		this.paper.arrow(e1,e2);
 		this.paper.arrow(e2,e3);
+
+		var node={_c:{x:200,y:300},highlight:true,"taskid":"2531","type":"event","color":"#99FF99","name":"依赖图测试-14","down":["2536"],"up":[{"id":"2527","color":"green"},{"id":"2519","color":"green"}]};
+		node=this.paper.tasknode(node);
 		
 
 	}
@@ -72,16 +77,16 @@
 		loadData:function(data,startNodes){
 			(!startNodes) && (startNodes=[]);
 			(typeof(startNodes)=="string") && (startNodes=[startNodes]);
-			if(!startNodes){
+			if(!startNodes.length){
 				for(var nodeid in data){
 					(!data[nodeid].up)  && (data.up=[]);
 					(!data[nodeid].down) && (data.down=[]);
 					if(data[nodeid].up.length==0) startNodes.push(nodeid);
 				}
 			}
-			debugger;
 			var me=this;
 			me.data=data;
+			//draw startNodes
 		},
 		reset:function(){
 			this.data={};
