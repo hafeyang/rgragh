@@ -1,88 +1,118 @@
-<!DOCTYPE html>
-<html>
+<!doctype html> 
+<html> 
 <head>
-  <meta charset='utf-8'>
-
-  <title>hafeyang/rgragh @ GitHub</title>
-
-  <style type="text/css">
-    body {
-      margin-top: 1.0em;
-      background-color: #855dc7;
-      font-family: Helvetica, Arial, FreeSans, san-serif;
-      color: #000000;
-    }
-    #container {
-      margin: 0 auto;
-      width: 700px;
-    }
-    h1 { font-size: 3.8em; color: #7aa238; margin-bottom: 3px; }
-    h1 .small { font-size: 0.4em; }
-    h1 a { text-decoration: none }
-    h2 { font-size: 1.5em; color: #7aa238; }
-    h3 { text-align: center; color: #7aa238; }
-    a { color: #7aa238; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-    .download { float: right; }
-    pre { background: #000; color: #fff; padding: 15px;}
-    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
-  </style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="edge"/>
+	<title>图</title> 
+	<script type="text/javascript" src="raphael-min.js"></script>
+	<script type="text/javascript" src="rgraph.js"></script>
+	<script type="text/javascript" src="tangram-1.3.9.js"></script>
 </head>
-
 <body>
-  <a href="https://github.com/hafeyang/rgragh"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
-
-  <div id="container">
-
-    <div class="download">
-      <a href="https://github.com/hafeyang/rgragh/zipball/master">
-        <img border="0" width="90" src="https://github.com/images/modules/download/zip.png"></a>
-      <a href="https://github.com/hafeyang/rgragh/tarball/master">
-        <img border="0" width="90" src="https://github.com/images/modules/download/tar.png"></a>
+<style type="text/css">
+	html,body,#canvas{margin:0px;padding:0px;height:100%; overflow:hidden; font-size:12px;}
+	#canvas{position:relative;z-index:1; background-color:#f5f5f5;}
+	.toolbar{position:absolute;left:0px;top:0px;width:100%;padding:4px 0px;background-color:#ECF4FA;font-size:12px;border:1px solid #ccc;margin-bottom:1px;opacity:0.8;filter:alpha(opacity=80);}
+	.tbtn {
+		-moz-box-shadow:inset 0px 1px 0px 0px #ffffff;
+		-webkit-box-shadow:inset 0px 1px 0px 0px #ffffff;
+		box-shadow:inset 0px 1px 0px 0px #ffffff;
+		background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ededed), color-stop(1, #dfdfdf) );
+		background:-moz-linear-gradient( center top, #ededed 5%, #dfdfdf 100% );
+		background-color:#ededed;
+		-moz-border-radius:6px;
+		-webkit-border-radius:6px;
+		border-radius:6px;
+		border:1px solid #dcdcdc;
+		display:inline-block;
+		color:#444;
+		font-family:arial;
+		font-size:12px;
+		font-weight:bold;
+		padding:3px 10px;
+		text-decoration:none;
+		text-shadow:1px 1px 0px #ffffff;
+		cursor:pointer;
+	}
+	.tbtn:hover {
+		background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #dfdfdf), color-stop(1, #ededed) );
+		background:-moz-linear-gradient( center top, #dfdfdf 5%, #ededed 100% );
+		background-color:#dfdfdf;
+	}
+	.tbtn:active {
+		position:relative;
+		top:1px;
+    }
+</style>
+<div id="canvas">
+    <div id="toolbar" class="toolbar">
+        <span style="float:right; margin-top:6px;padding-right:20px;"></span>
+        <span>
+            <input type="button" id="" value="刷新" class="tbtn" onclick="loaddata();" />
+            <input type="button" id="" value="放大" class="tbtn" onclick="graph.setZoom(graph.getZoom()*1.1);" />
+            <input type="button" id="" value="复位" class="tbtn" onclick="graph.reset();"  />
+            <input type="button" id="" value="缩小"  class="tbtn" onclick="graph.setZoom(graph.getZoom()*0.9);" />
+            <b id="msg" style="color:red;"></b>
+        </span>
     </div>
+</div>
+<script type="text/javascript">
+/*
+*   绘制节点的插件，根据业务实际需要绘制节点
+*   @param p {x:x,y:y} 坐标
+*   @param node 节点数据
+*/
+Raphael.fn.tasknode= function(p,node){
+    var paper = this;
+    if(typeof(p.r)!="undefined" && typeof(p.t)!="undefined"){
+        var t = paper.getById(p.t),r= paper.getById(p.r),node=p.node; 
+        r.type=="rect"?(r.attr({x:p.x-70,y:p.y-40})):(r.attr({cx:p.x,cy:p.y-15,x:p.x,y:p.y-15}));
+        t.attr({x:p.x,y:p.y-15});
+        return p;
+    }
+    var r=(node.type=="time"?paper.ellipse(p.x,p.y-15,80,30):paper.rect(p.x-70,p.y-40,140,50,3)).attr({fill:(node.color||"#f8f8f8"),
+        stroke:(node.color||"#000"),"cursor":"pointer"}),
+        ellipsedName= node.name.length>8?(node.name.substr(0,7)+".."):node.name,
+        t=paper.text(p.x,p.y-15,node.taskid+"("+ellipsedName+")\n "+node.runCondition+" \n "+node.lastRun).attr({color:"#f5f5f5","font-size":12,"cursor":"pointer"});
+    r.data("id",node.id);//将taskid存到rect中 拖拽节点时需要用到
+    t.data("id",node.id);//将taskid存到text中
+    if(node.highlight===true) {
+        r.attr({"stroke":"#ff9900","stroke-width":3});
+    }
+    return {x:p.x,y:p.y,r:r.id,t:t.id};
+}
 
-    <h1><a href="https://github.com/hafeyang/rgragh">rgragh</a>
-      <span class="small">by <a href="https://github.com/hafeyang">hafeyang</a></span></h1>
+baidu.dom.ready(function(){
+	window.graph = new RGraph("canvas",{
+        onnodeclick:function(node){
+            var id=node.taskid,name = node.name,tab="";
+            if(typeof top.mtabs == 'undefined'){
+                window.open("/ctweb/task/view?taskid="+id);
+                return;
+            }
+            top.mtabs.openUrl("/ctweb/task/view?taskid="+id+tab, name, "task_"+id, true);
+        },
+        node:"tasknode"//Raphael.fn.tasknode
+    });
 
-    <div class="description">
-      gragh based raphael
-    </div>
+    window.loaddata=function (){
+        baidu.g("msg").innerHTML="正在加载数据";
+        graph.highlightNodeIds=["88988"]; 
+		baidu.g("msg").innerHTML="";
+		for(var taskid in testdata.tasks){
+			var task = testdata.tasks[taskid];
+			task.id=taskid;
+			(!task.down) &&(task.down=[]);
+			(!task.up) && (task.up=[]);
+        }
+		graph.loadData(testdata.tasks);
+    }
+    loaddata();
+});
+//数据格式形如
+testdata={"tasks":{"88988":{"taskid":"88988","up":[],"type":"time","color":"#6aef4f","name":"\u6570\u636e\u914d\u9001\uff1a\u914d\u9001-308","lastRun":"1970-01-01 07:00:02","runCondition":"* * 1 * *","down":[]},"88986":{"taskid":"88986","up":[{"id":"88985","color":"#d8d8d8"}],"type":"time_","color":"#d8d8d8","name":"\u67e5\u4f9d\u8d56-\u4e0b\u6e38","lastRun":"1970-01-01 07:00:02","runCondition":"*\/2 * * * *","down":[]},"88985":{"taskid":"88985","up":[],"type":"time","color":"#d8d8d8","name":"\u67e5\u4f9d\u8d56-\u4e0a\u6709","lastRun":"1970-01-01 07:00:02","runCondition":"*\/2 * * * *","down":["88986"]}}};
 
-    
-
-    
-
-    
-
-    
-
-    
-      <h2>Authors</h2>
-      <p>hafeyang (yanghengfeng@163.com)<br/>      </p>
-    
-
-    
-      <h2>Contact</h2>
-      <p>阳衡锋 (yanghengfeng@163.com)<br/>      </p>
-    
-
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="https://github.com/hafeyang/rgragh/zipball/master">zip</a> or
-      <a href="https://github.com/hafeyang/rgragh/tarball/master">tar formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/hafeyang/rgragh</pre>
-    </p>
-
-    <div class="footer">
-      get the source code on GitHub : <a href="https://github.com/hafeyang/rgragh">hafeyang/rgragh</a>
-    </div>
-
-  </div>
+</script>
 
 </body>
 </html>
